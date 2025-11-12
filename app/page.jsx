@@ -375,6 +375,7 @@ export default function Page() {
   };
 
   const handleFiles = async (e) => {
+
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
   
@@ -425,6 +426,7 @@ export default function Page() {
       const uploadPromises = validFiles.map(async (file) => {
         const formData = new FormData();
         formData.append("file", file);
+        console.log("<<<<<<<<<< try to access file in there <><><><><><><>")
   
         const response = await fetch("/api/uploadFile", {
           method: "POST",

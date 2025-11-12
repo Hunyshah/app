@@ -329,6 +329,7 @@ export default function ChatPage() {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     try {
+      console.log("files selected now ......>>>>>>>>")
       setUploadingAtt(true);
       const results = await uploadMultipleFilesToVercel(files, userData?.token);
       const mapped = (results || []).map((r) => ({

@@ -1,3 +1,5 @@
+"use client"; // ✅ ensures this file is treated as client-only
+
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -7,103 +9,111 @@ import { baseURL } from "./apiFunction";
 
 /**
  * Upload file to Vercel Blob storage
+ * ✅ Build-safe, client-only version
  * @param {File} file - File to upload
  * @param {string} token - Authentication token
- * @returns {Promise<Object>} Upload response with URL
+ * @returns {Promise<Object|null>} Upload response with URL or null if failed
  */
 export const uploadFileToVercel = async (file, token) => {
+  // ✅ Prevent running on server or during build
+  if (typeof window === "undefined") {
+    console.warn("uploadFileToVercel called during SSR — skipped.");
+    return null;
+  }
+
   try {
-    // Handle Ant Design Upload file object - get the actual File object
-    const actualFile = file.originFileObj || file;
-    
-    // Debug: Log file information
-    // eslint-disable-next-line no-console
+    const actualFile = file?.originFileObj || file;
+    if (!actualFile) {
+      toast.error("No file selected");
+      return null;
+    }
+
+    // ✅ Client-side only: safe to use File & FormData
     console.log("Frontend file validation:", {
       name: actualFile.name,
       type: actualFile.type,
       size: actualFile.size,
       isFile: actualFile instanceof File,
-      fileObject: actualFile
     });
 
-    // Validate file type
-    const check = isValidFileType(actualFile);
-
-    if (!check) {
-      // eslint-disable-next-line no-console
-      console.log("Frontend validation failed for file:", actualFile.name, "type:", actualFile.type);
-
+    // ✅ File type validation
+    if (!isValidFileType(actualFile)) {
       toast.error(
         `Invalid file type: ${actualFile.type}. Allowed: jpg, jpeg, png, svg, webp, pdf, doc, docx, xls, xlsx, txt`
       );
-
       return null;
     }
 
-    // Validate file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-
+    // ✅ File size validation (10MB max)
+    const maxSize = 10 * 1024 * 1024;
     if (actualFile.size > maxSize) {
-      toast.error("File too large. Maximum size is 10MB");
-
+      toast.error("File too large. Maximum size is 10MB.");
       return null;
     }
 
-    // Create form data
+    // ✅ Prepare form data
     const formData = new FormData();
-
     formData.append("file", actualFile);
 
-    // Create headers with authentication
-    const headers = {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
+    // ✅ Headers (auth optional)
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    // Upload to Vercel Blob using authenticated request
-    const response = await axios.post(
-      `${baseURL}${uploadFileApi}`,
-      formData,
-      { headers }
-    );
+    // ✅ Upload request
+    const response = await axios.post(`${baseURL}${uploadFileApi}`, formData, {
+      headers,
+    });
 
-    if (response?.data?.success) {
-      // Show compression info if file was compressed
-      if (response.data.compressed && response.data.originalSize) {
-        const compressionRatio = Math.round((1 - response.data.fileSize / response.data.originalSize) * 100);
-        console.log(`File compressed: ${compressionRatio}% size reduction`);
+    const data = response?.data;
+
+    if (data?.success) {
+      // Optional compression info
+      if (data.compressed && data.originalSize) {
+        const ratio = Math.round(
+          (1 - data.fileSize / data.originalSize) * 100
+        );
+        console.log(`File compressed: ${ratio}% reduction`);
       }
-      
+
       return {
-        fileName: response.data.fileName,
-        fileUrl: response.data.url,
-        fileType: response.data.fileType,
-        fileSize: response.data.fileSize,
-        originalSize: response.data.originalSize,
-        compressed: response.data.compressed,
+        fileName: data.fileName,
+        fileUrl: data.url,
+        fileType: data.fileType,
+        fileSize: data.fileSize,
+        originalSize: data.originalSize,
+        compressed: data.compressed,
       };
     } else {
-      throw new Error(response?.data?.message || "Upload failed");
+      throw new Error(data?.message || "Upload failed");
     }
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error("Error uploading file:", error?.response?.data || error?.message);
-
-    toast.error(error?.response?.data?.message || error?.message || "Failed to upload file");
-
+    toast.error(
+      error?.response?.data?.message ||
+        error?.message ||
+        "Failed to upload file"
+    );
     return null;
   }
 };
 
 /**
  * Upload multiple files to Vercel Blob storage
- * @param {File[]} files - Array of files to upload
- * @param {string} token - Authentication token
- * @returns {Promise<Array>} Array of upload responses
+ * ✅ Parallel safe version
+ * @param {File[]} files - Files array
+ * @param {string} token - Auth token
+ * @returns {Promise<Array>} Successful uploads only
  */
 export const uploadMultipleFilesToVercel = async (files, token) => {
-  const uploadPromises = files.map(file => uploadFileToVercel(file, token));
-  const results = await Promise.all(uploadPromises);
-  
-  // Filter out null results (failed uploads)
-  return results.filter(result => result !== null);
+  if (typeof window === "undefined") return [];
+
+  const uploadPromises = (files || []).map((file) =>
+    uploadFileToVercel(file, token)
+  );
+
+  const results = await Promise.allSettled(uploadPromises);
+
+  // ✅ Return only successful uploads
+  return results
+    .filter((r) => r.status === "fulfilled" && r.value)
+    .map((r) => r.value);
 };
