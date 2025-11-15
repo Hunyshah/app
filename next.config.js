@@ -4,6 +4,7 @@ const nextConfig = {
     // Allow production builds to succeed even if there are ESLint warnings
     ignoreDuringBuilds: true,
   },
+    serverExternalPackages: ['pdf-parse'],
   images: {
     remotePatterns: [
       {
