@@ -22,7 +22,7 @@ const nextConfig = {
     ],
   },
 
-   serverExternalPackages: ['pdf-parse'],
+  //  serverExternalPackages: ['pdf-parse'],
   
   // 5. REMOVE or REPLACE the standalone serverExternalPackages line from your original config, 
   // as it is now inside 'experimental' for completeness. 
