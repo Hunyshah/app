@@ -22,24 +22,7 @@ const nextConfig = {
     ],
   },
 
-  // 3. CORE FIX: The 'experimental' key is necessary for file tracing
-  experimental: {
-    // This is the key that forces the inclusion of worker files
-    outputFileTracingIncludes: {
-      '**/*': [
-        // Include all necessary files for pdf-parse and its underlying pdfjs-dist
-        './node_modules/pdf-parse/**/*',
-        './node_modules/pdfjs-dist/build/**/*',
-      ],
-    },
-    
-    // 4. CORE FIX: Use the 'serverExternalPackages' under 'experimental' or as a standalone
-    // It's cleaner to keep the externalization of the dependency here, and ensure 'pdfjs-dist' is included.
-    serverExternalPackages: [
-      'pdf-parse',
-      'pdfjs-dist', // <--- IMPORTANT: Include pdfjs-dist as well
-    ],
-  },
+   serverExternalPackages: ['pdf-parse'],
   
   // 5. REMOVE or REPLACE the standalone serverExternalPackages line from your original config, 
   // as it is now inside 'experimental' for completeness. 

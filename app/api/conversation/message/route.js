@@ -9,7 +9,7 @@ import BusinessData from "@/models/businessData";
 import Category from "@/models/category";
 import { siteConfig } from "@/config/site";
 import { formatResponse } from "@/utils/response";
-import { analyzeMultipleDocuments } from "@/libs/documentAnalyzer";
+import { analyzeMultipleDocuments } from "@/libs/docAnalizer";
 
 
 
